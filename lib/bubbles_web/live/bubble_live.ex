@@ -4,6 +4,7 @@ defmodule BubblesWeb.BubbleLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col w-max h-max">
+      <.header>Score: <%= @score %></.header>
       <.button phx-click="reset_bubbles" class="w-full">Reset bubbles</.button>
       <div class="grid grid-cols-10 grid-rows-10 border-2 w-fit h-fit">
         <%= for {c, cindex} <- Enum.with_index(@bubbles) do %>
@@ -29,25 +30,30 @@ defmodule BubblesWeb.BubbleLive do
 
   def mount(_params, _session, socket) do
     bubbles = List.duplicate(false, 10) |> Enum.map(fn _x -> List.duplicate(false, 10) end)
-    {:ok, assign(socket, :bubbles, bubbles)}
+    {:ok, assign(socket, %{bubbles: bubbles, score: 0})}
   end
 
   def handle_event("pop_bubble", value, socket) do
-    # socket = update(socket, :bubbles, &Enum.drop(&1, 1))
-    socket =
-      update(
-        socket,
-        :bubbles,
-        fn bubbles ->
-          List.update_at(
-            bubbles,
-            value["column"] |> String.to_integer(),
-            &List.update_at(&1, value["row"] |> String.to_integer(), fn _ -> true end)
-          )
-        end
-      )
+    selected? =
+      socket.assigns[:bubbles]
+      |> Enum.at(String.to_integer(value["column"]))
+      |> Enum.at(String.to_integer(value["row"]))
 
-    {:noreply, socket}
+    case selected? do
+      true ->
+        {:noreply, socket}
+
+      false ->
+        socket =
+          update(
+            socket,
+            :bubbles,
+            &merge_bubble_changes(&1, value)
+          )
+          |> update(:score, &(&1 + 1))
+
+        {:noreply, socket}
+    end
   end
 
   def handle_event("reset_bubbles", _, socket) do
@@ -61,5 +67,13 @@ defmodule BubblesWeb.BubbleLive do
       )
 
     {:noreply, socket}
+  end
+
+  defp merge_bubble_changes(bubbles, value) do
+    List.update_at(
+      bubbles,
+      value["column"] |> String.to_integer(),
+      &List.update_at(&1, value["row"] |> String.to_integer(), fn _ -> true end)
+    )
   end
 end
