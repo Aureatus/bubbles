@@ -17,7 +17,7 @@ defmodule BubblesWeb.Router do
   scope "/", BubblesWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", BubbleLive
   end
 
   # Other scopes may use custom stacks.
