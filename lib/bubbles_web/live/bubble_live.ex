@@ -156,14 +156,26 @@ defmodule BubblesWeb.BubbleLive do
     bubbles = socket.assigns[:bubbles]
     all_popped? = Enum.all?(bubbles, fn column -> Enum.all?(column) end)
 
+    transformed_bubbles =
+      Enum.with_index(bubbles)
+      |> Enum.map(fn {bbl, index} -> {Enum.with_index(bbl), index} end)
+
+    filtered_column_bubbles =
+      transformed_bubbles
+      |> Enum.filter(fn {val, _index} -> !Enum.all?(val, fn {bool, _index} -> bool end) end)
+
+    filtered_row_bubbles =
+      filtered_column_bubbles
+      |> Enum.map(fn {val, index} -> {Enum.filter(val, fn {bool, _} -> !bool end), index} end)
+
     if auto_pop? and !all_popped? do
-      [rand1, rand2] = get_rand(bubbles)
+      {column_index, row_index} = get_rand(filtered_row_bubbles)
 
       socket =
         update(
           socket,
           :bubbles,
-          &update_bubble(&1, rand1, rand2)
+          &update_bubble(&1, column_index, row_index)
         )
         |> update(:score, &(&1 + 1))
 
@@ -185,9 +197,9 @@ defmodule BubblesWeb.BubbleLive do
     List.duplicate(false, 10) |> Enum.map(fn _x -> List.duplicate(false, 10) end)
   end
 
-  defp get_rand(bubbles) do
-    [rand1, rand2] = 1..2 |> Enum.map(fn _ -> Enum.random(0..9) end)
-    is_valid? = !(bubbles |> Enum.at(rand1) |> Enum.at(rand2))
-    if is_valid?, do: [rand1, rand2], else: get_rand(bubbles)
+  defp get_rand(filtered_bubbles) do
+    {column, column_index} = Enum.random(filtered_bubbles)
+    {_, row_index} = Enum.random(column)
+    {column_index, row_index}
   end
 end
