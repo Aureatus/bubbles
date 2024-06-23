@@ -15,6 +15,13 @@ defmodule BubblesWeb.BubbleLive do
       >
         Purchase auto reset
       </.button>
+      <.button
+        disabled={@score < 10 || @auto_pop}
+        phx-click="enable-auto_pop"
+        class="disabled:opacity-5"
+      >
+        Purchase auto pop
+      </.button>
       <div class="grid grid-cols-10 grid-rows-10 border-2 w-fit h-fit">
         <%= for {c, cindex} <- Enum.with_index(@bubbles) do %>
           <%= for {r, rindex} <- Enum.with_index(c) do %>
@@ -39,8 +46,9 @@ defmodule BubblesWeb.BubbleLive do
 
   def mount(_params, _session, socket) do
     :timer.send_interval(3000, self(), :tick)
+    :timer.send_interval(300, self(), :auto_pop)
 
-    assigns = %{bubbles: create_empty_bubbles(), score: 0, auto_reset: false}
+    assigns = %{bubbles: create_empty_bubbles(), score: 0, auto_reset: false, auto_pop: false}
 
     {:ok, assign(socket, assigns)}
   end
@@ -99,6 +107,24 @@ defmodule BubblesWeb.BubbleLive do
     end
   end
 
+  def handle_event("enable-auto_pop", _, socket) do
+    case socket.assigns[:score] do
+      n when n < 10 ->
+        {:noreply, socket}
+
+      n when n >= 10 ->
+        socket =
+          update(
+            socket,
+            :auto_pop,
+            fn _ -> true end
+          )
+          |> update(:score, fn x -> x - 10 end)
+
+        {:noreply, socket}
+    end
+  end
+
   def handle_info(:tick, socket) do
     auto_reset? =
       socket.assigns[:auto_reset]
@@ -117,6 +143,35 @@ defmodule BubblesWeb.BubbleLive do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_info(:auto_pop, socket) do
+    auto_pop? =
+      socket.assigns[:auto_pop]
+
+    if auto_pop? do
+      [rand1, rand2] = 1..2 |> Enum.map(fn _ -> Enum.random(1..10) end)
+
+      socket =
+        update(
+          socket,
+          :bubbles,
+          &update_bubble(&1, rand1, rand2)
+        )
+        |> update(:score, &(&1 + 1))
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  defp update_bubble(bubbles, column, row) do
+    List.update_at(
+      bubbles,
+      column,
+      &List.update_at(&1, row, fn _ -> true end)
+    )
   end
 
   defp merge_bubble_changes(bubbles, value) do
