@@ -149,11 +149,15 @@ defmodule BubblesWeb.BubbleLive do
   end
 
   def handle_info(:auto_pop, socket) do
+    #  Maybe withIndex enum function can help do this more efficiently?
     auto_pop? =
       socket.assigns[:auto_pop]
 
-    if auto_pop? do
-      [rand1, rand2] = 1..2 |> Enum.map(fn _ -> Enum.random(1..10) end)
+    bubbles = socket.assigns[:bubbles]
+    all_popped? = Enum.all?(bubbles, fn column -> Enum.all?(column) end)
+
+    if auto_pop? and !all_popped? do
+      [rand1, rand2] = get_rand(bubbles)
 
       socket =
         update(
@@ -179,5 +183,11 @@ defmodule BubblesWeb.BubbleLive do
 
   defp create_empty_bubbles do
     List.duplicate(false, 10) |> Enum.map(fn _x -> List.duplicate(false, 10) end)
+  end
+
+  defp get_rand(bubbles) do
+    [rand1, rand2] = 1..2 |> Enum.map(fn _ -> Enum.random(0..9) end)
+    is_valid? = !(bubbles |> Enum.at(rand1) |> Enum.at(rand2))
+    if is_valid?, do: [rand1, rand2], else: get_rand(bubbles)
   end
 end
