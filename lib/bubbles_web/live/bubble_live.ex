@@ -54,10 +54,13 @@ defmodule BubblesWeb.BubbleLive do
   end
 
   def handle_event("pop_bubble", value, socket) do
+    column = String.to_integer(value["column"])
+    row = String.to_integer(value["row"])
+
     selected? =
       socket.assigns[:bubbles]
-      |> Enum.at(String.to_integer(value["column"]))
-      |> Enum.at(String.to_integer(value["row"]))
+      |> Enum.at(column)
+      |> Enum.at(row)
 
     case selected? do
       true ->
@@ -68,7 +71,7 @@ defmodule BubblesWeb.BubbleLive do
           update(
             socket,
             :bubbles,
-            &merge_bubble_changes(&1, value)
+            &update_bubble(&1, column, row)
           )
           |> update(:score, &(&1 + 1))
 
@@ -171,14 +174,6 @@ defmodule BubblesWeb.BubbleLive do
       bubbles,
       column,
       &List.update_at(&1, row, fn _ -> true end)
-    )
-  end
-
-  defp merge_bubble_changes(bubbles, value) do
-    List.update_at(
-      bubbles,
-      value["column"] |> String.to_integer(),
-      &List.update_at(&1, value["row"] |> String.to_integer(), fn _ -> true end)
     )
   end
 
