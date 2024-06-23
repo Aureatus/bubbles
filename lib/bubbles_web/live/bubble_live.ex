@@ -8,7 +8,11 @@ defmodule BubblesWeb.BubbleLive do
       <.button phx-click="reset_bubbles" class="w-full">
         Reset bubbles
       </.button>
-      <.button disabled={@score < 3 || @auto_reset} phx-click="enable-auto_reset" class="w-full">
+      <.button
+        disabled={@score < 3 || @auto_reset}
+        phx-click="enable-auto_reset"
+        class="disabled:opacity-5"
+      >
         Purchase auto reset
       </.button>
       <div class="grid grid-cols-10 grid-rows-10 border-2 w-fit h-fit">
