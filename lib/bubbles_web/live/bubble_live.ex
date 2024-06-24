@@ -22,6 +22,13 @@ defmodule BubblesWeb.BubbleLive do
       >
         Purchase auto pop
       </.button>
+      <.button
+        disabled={@score < 20 || @pop_radius_increase}
+        phx-click="enable-pop_radius_increase"
+        class="disabled:opacity-5"
+      >
+        Purchase pop radius increase
+      </.button>
       <div class="grid grid-cols-10 grid-rows-10 border-2 w-fit h-fit">
         <%= for {c, cindex} <- Enum.with_index(@bubbles) do %>
           <%= for {r, rindex} <- Enum.with_index(c) do %>
@@ -48,7 +55,13 @@ defmodule BubblesWeb.BubbleLive do
     :timer.send_interval(3000, self(), :tick)
     :timer.send_interval(300, self(), :auto_pop)
 
-    assigns = %{bubbles: create_empty_bubbles(), score: 0, auto_reset: false, auto_pop: false}
+    assigns = %{
+      bubbles: create_empty_bubbles(),
+      score: 0,
+      auto_reset: false,
+      auto_pop: false,
+      pop_radius_increase: false
+    }
 
     {:ok, assign(socket, assigns)}
   end
@@ -57,25 +70,59 @@ defmodule BubblesWeb.BubbleLive do
     column = String.to_integer(value["column"])
     row = String.to_integer(value["row"])
 
-    selected? =
-      socket.assigns[:bubbles]
-      |> Enum.at(column)
-      |> Enum.at(row)
+    bubbles = socket.assigns[:bubbles]
 
-    case selected? do
-      true ->
-        {:noreply, socket}
+    if socket.assigns[:pop_radius_increase] do
+      cols =
+        Enum.filter([column - 1, column, column + 1], fn num ->
+          num >= 0 && num < Enum.count(bubbles)
+        end)
 
-      false ->
-        socket =
-          update(
-            socket,
-            :bubbles,
-            &update_bubble(&1, column, row)
-          )
-          |> update(:score, &(&1 + 1))
+      rows =
+        Enum.filter([row - 1, row, row + 1], fn num -> num >= 0 && num < Enum.count(bubbles) end)
 
-        {:noreply, socket}
+      temp_list =
+        for col <- cols, row <- rows do
+          selected? =
+            bubbles
+            |> Enum.at(col)
+            |> Enum.at(row)
+
+          if selected?, do: [], else: [col, row]
+        end
+        |> Enum.filter(fn x -> !Enum.empty?(x) end)
+
+      new_bubbles =
+        Enum.reduce(temp_list, bubbles, fn x, acc ->
+          update_bubble(acc, Enum.at(x, 0), Enum.at(x, 1))
+        end)
+
+      socket =
+        update(socket, :bubbles, fn _ -> new_bubbles end)
+        |> update(:score, &(&1 + Enum.count(temp_list)))
+
+      {:noreply, socket}
+    else
+      selected? =
+        socket.assigns[:bubbles]
+        |> Enum.at(column)
+        |> Enum.at(row)
+
+      case selected? do
+        true ->
+          {:noreply, socket}
+
+        false ->
+          socket =
+            update(
+              socket,
+              :bubbles,
+              &update_bubble(&1, column, row)
+            )
+            |> update(:score, &(&1 + 1))
+
+          {:noreply, socket}
+      end
     end
   end
 
@@ -123,6 +170,24 @@ defmodule BubblesWeb.BubbleLive do
             fn _ -> true end
           )
           |> update(:score, fn x -> x - 10 end)
+
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("enable-pop_radius_increase", _, socket) do
+    case socket.assigns[:score] do
+      n when n < 20 ->
+        {:noreply, socket}
+
+      n when n >= 20 ->
+        socket =
+          update(
+            socket,
+            :pop_radius_increase,
+            fn _ -> true end
+          )
+          |> update(:score, fn x -> x - 20 end)
 
         {:noreply, socket}
     end
