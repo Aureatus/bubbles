@@ -1,5 +1,6 @@
 defmodule BubblesWeb.BubbleLive do
   use BubblesWeb, :live_view
+  alias Bubbles.Bubbles
 
   def render(assigns) do
     ~H"""
@@ -56,7 +57,7 @@ defmodule BubblesWeb.BubbleLive do
     :timer.send_interval(300, self(), :auto_pop)
 
     assigns = %{
-      bubbles: create_empty_bubbles(),
+      bubbles: Bubbles.generate(10),
       score: 0,
       auto_reset: false,
       auto_pop: false,
@@ -94,7 +95,7 @@ defmodule BubblesWeb.BubbleLive do
 
       new_bubbles =
         Enum.reduce(temp_list, bubbles, fn x, acc ->
-          update_bubble(acc, Enum.at(x, 0), Enum.at(x, 1))
+          Bubbles.update_bubble(acc, Enum.at(x, 0), Enum.at(x, 1))
         end)
 
       socket =
@@ -117,7 +118,7 @@ defmodule BubblesWeb.BubbleLive do
             update(
               socket,
               :bubbles,
-              &update_bubble(&1, column, row)
+              &Bubbles.update_bubble(&1, column, row)
             )
             |> update(:score, &(&1 + 1))
 
@@ -132,7 +133,7 @@ defmodule BubblesWeb.BubbleLive do
         socket,
         :bubbles,
         fn _ ->
-          create_empty_bubbles()
+          Bubbles.generate(10)
         end
       )
 
@@ -203,7 +204,7 @@ defmodule BubblesWeb.BubbleLive do
           socket,
           :bubbles,
           fn _ ->
-            create_empty_bubbles()
+            Bubbles.generate(10)
           end
         )
 
@@ -234,13 +235,13 @@ defmodule BubblesWeb.BubbleLive do
       |> Enum.map(fn {val, index} -> {Enum.filter(val, fn {bool, _} -> !bool end), index} end)
 
     if auto_pop? and !all_popped? do
-      {column_index, row_index} = get_rand(filtered_row_bubbles)
+      {column_index, row_index} = Bubbles.get_rand(filtered_row_bubbles)
 
       socket =
         update(
           socket,
           :bubbles,
-          &update_bubble(&1, column_index, row_index)
+          &Bubbles.update_bubble(&1, column_index, row_index)
         )
         |> update(:score, &(&1 + 1))
 
@@ -248,23 +249,5 @@ defmodule BubblesWeb.BubbleLive do
     else
       {:noreply, socket}
     end
-  end
-
-  defp update_bubble(bubbles, column, row) do
-    List.update_at(
-      bubbles,
-      column,
-      &List.update_at(&1, row, fn _ -> true end)
-    )
-  end
-
-  defp create_empty_bubbles do
-    List.duplicate(false, 10) |> Enum.map(fn _x -> List.duplicate(false, 10) end)
-  end
-
-  defp get_rand(filtered_bubbles) do
-    {column, column_index} = Enum.random(filtered_bubbles)
-    {_, row_index} = Enum.random(column)
-    {column_index, row_index}
   end
 end
