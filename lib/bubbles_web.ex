@@ -85,6 +85,7 @@ defmodule BubblesWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import BubblesWeb.CoreComponents
+      import BubblesWeb.CustomComponents
       import BubblesWeb.Gettext
 
       # Shortcut for generating JS commands

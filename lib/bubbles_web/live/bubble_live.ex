@@ -5,31 +5,12 @@ defmodule BubblesWeb.BubbleLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col w-max h-max">
-      <.header>Score: <%= @score %></.header>
-      <.button phx-click="reset_bubbles" class="w-full">
-        Reset bubbles
-      </.button>
-      <.button
-        disabled={@score < 3 || @auto_reset}
-        phx-click="enable-auto_reset"
-        class="disabled:opacity-5"
-      >
-        Purchase auto reset
-      </.button>
-      <.button
-        disabled={@score < 10 || @auto_pop}
-        phx-click="enable-auto_pop"
-        class="disabled:opacity-5"
-      >
-        Purchase auto pop
-      </.button>
-      <.button
-        disabled={@score < 20 || @pop_radius_increase}
-        phx-click="enable-pop_radius_increase"
-        class="disabled:opacity-5"
-      >
-        Purchase pop radius increase
-      </.button>
+      <.perk_section
+        score={assigns.score}
+        auto_reset={assigns.auto_reset}
+        auto_pop={assigns.auto_pop}
+        pop_radius_increase={assigns.pop_radius_increase}
+      />
       <div class="grid grid-cols-10 grid-rows-10 border-2 w-fit h-fit">
         <%= for {c, cindex} <- Enum.with_index(@bubbles) do %>
           <%= for {r, rindex} <- Enum.with_index(c) do %>
