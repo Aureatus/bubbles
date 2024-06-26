@@ -5,7 +5,12 @@ defmodule BubblesWeb.BubbleLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col w-max h-max">
-      <.perk_section {assigns} />
+      <.perk_section
+        score={@score}
+        auto_reset={@auto_reset}
+        auto_pop={@auto_pop}
+        pop_radius_increase={@pop_radius_increase}
+      />
       <div class="grid grid-cols-10 grid-rows-10 border-2 w-fit h-fit">
         <%= for {c, cindex} <- Enum.with_index(@bubbles) do %>
           <%= for {r, rindex} <- Enum.with_index(c) do %>
