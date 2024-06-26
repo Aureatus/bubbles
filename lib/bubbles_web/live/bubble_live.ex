@@ -11,24 +11,7 @@ defmodule BubblesWeb.BubbleLive do
         auto_pop={@auto_pop}
         pop_radius_increase={@pop_radius_increase}
       />
-      <div class="grid grid-cols-10 grid-rows-10 border-2 w-fit h-fit">
-        <%= for {c, cindex} <- Enum.with_index(@bubbles) do %>
-          <%= for {r, rindex} <- Enum.with_index(c) do %>
-            <button
-              phx-click="pop_bubble"
-              phx-value-column={cindex}
-              phx-value-row={rindex}
-              class="w-16 h-16 text-center m-2 text-l border-2 rounded-full select-none"
-            >
-              <%= unless r do
-                "pop"
-              else
-                "popped"
-              end %>
-            </button>
-          <% end %>
-        <% end %>
-      </div>
+      <.bubble_grid bubbles={@bubbles} class="grid grid-cols-10 grid-rows-10 border-2 w-fit h-fit" />
     </div>
     """
   end

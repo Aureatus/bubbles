@@ -39,4 +39,30 @@ defmodule BubblesWeb.CustomComponents do
     </div>
     """
   end
+
+  attr :bubbles, :list, required: true
+  attr :rest, :global
+
+  def bubble_grid(assigns) do
+    ~H"""
+    <div {@rest}>
+      <%= for {c, cindex} <- Enum.with_index(@bubbles) do %>
+        <%= for {r, rindex} <- Enum.with_index(c) do %>
+          <button
+            phx-click="pop_bubble"
+            phx-value-column={cindex}
+            phx-value-row={rindex}
+            class="w-16 h-16 text-center m-2 text-l border-2 rounded-full select-none"
+          >
+            <%= unless r do
+              "pop"
+            else
+              "popped"
+            end %>
+          </button>
+        <% end %>
+      <% end %>
+    </div>
+    """
+  end
 end
